@@ -1698,6 +1698,12 @@ int hdfsDelete(hdfsFS fs, const char *path, int recursive)
 
 int hdfsRename(hdfsFS fs, const char *oldPath, const char *newPath)
 {
+  return hdfsRenameExt(fs, oldPath, newPath, HDFS_RENAME_FLAG_NONE);
+}
+
+int hdfsRenameExt(hdfsFS fs, const char* oldPath, const char* newPath,
+                  int flags)
+{
     // JAVA EQUIVALENT:
     //  Path old = new Path(oldPath);
     //  Path new = new Path(newPath);
@@ -1730,29 +1736,57 @@ int hdfsRename(hdfsFS fs, const char *oldPath, const char *newPath)
     }
 
     // Rename the file
-    // TODO: use rename2 here?  (See HDFS-3592)
-    jthr = invokeMethod(env, &jVal, INSTANCE, jFS, HADOOP_FS, "rename",
-                     JMETHOD2(JPARAM(HADOOP_PATH), JPARAM(HADOOP_PATH), "Z"),
-                     jOldPath, jNewPath);
+    if (flags & HDFS_RENAME_FLAG_OVERWRITE) {
+        jthr = getJavaEnum(env, "org/apache/hadoop/fs/Options$Rename",
+                           "OVERWRITE", &overwriteEnum);
+        if (jthr) {
+            errno = printExceptionAndFree(env, jthr, PRINT_EXC_ALL,
+                                      "getJavaEnum(Options$Rename) failed");
+            goto done;
+        }
+        jthr = globalClassReference("org/apache/hadoop/fs/Options$Rename", env,
+                                    &renameClazz);
+        if (jthr) {
+            errno = printExceptionAndFree(env, jthr, PRINT_EXC_ALL,
+                            "globalClassReference(Options$Rename) failed");
+            goto done;
+        }
+        overwriteArray = (*env)->NewObjectArray(env, 1, renameClazz,
+                                                overwriteEnum);
+        if (!overwriteArray) {
+            errno = printPendingExceptionAndFree(env, PRINT_EXC_ALL,
+                             "NewObjectArray failed");
+            goto done;
+        }
+        jthr = invokeMethod(env, NULL, INSTANCE, jFS, HADOOP_FS, "rename",
+                            "(L"HADOOP_PATH";L"HADOOP_PATH";"
+                            "[Lorg/apache/hadoop/fs/Options$Rename;)V",
+                             jOldPath, jNewPath, overwriteArray);
+        jVal.z = JNI_TRUE;
+    } else {
+      jthr = invokeMethod(env, &jVal, INSTANCE, jFS, HADOOP_FS, "rename",
+                          "(L"HADOOP_PATH";L"HADOOP_PATH";)Z",
+                          jOldPath, jNewPath);
+    }
     if (jthr) {
         errno = printExceptionAndFree(env, jthr, PRINT_EXC_ALL,
             "hdfsRename(oldPath=%s, newPath=%s): FileSystem#rename",
             oldPath, newPath);
         goto done;
     }
-    if (!jVal.z) {
+    if (jVal.z == JNI_FALSE) {
         errno = EIO;
         goto done;
     }
     ret = 0;
 
 done:
-    destroyLocalReference(env, jOldPath);
-    destroyLocalReference(env, jNewPath);
+    (*env)->DeleteLocalRef(env, jOldPath);
+    (*env)->DeleteLocalRef(env, jNewPath);
+    (*env)->DeleteLocalRef(env, overwriteEnum);
+    (*env)->DeleteLocalRef(env, overwriteArray);
     return ret;
 }
-
-
 
 char* hdfsGetWorkingDirectory(hdfsFS fs, char* buffer, size_t bufferSize)
 {

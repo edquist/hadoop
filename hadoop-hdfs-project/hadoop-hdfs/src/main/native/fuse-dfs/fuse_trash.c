@@ -199,7 +199,9 @@ int move_to_trash(const char *abs_path, hdfsFS userFS)
       goto done;
     }
   }
-  if (hdfsRename(userFS, abs_path, target)) {
+
+
+  if (hdfsRenameExt(userFS, abs_path, target, HDFS_RENAME_FLAG_NONE)) {
     ret = errno;
     ERROR("move_to_trash(%s): failed to rename the file to %s: error %d",
           abs_path, target, ret);
