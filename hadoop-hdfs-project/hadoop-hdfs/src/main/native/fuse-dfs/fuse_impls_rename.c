@@ -51,7 +51,7 @@ int dfs_rename(const char *from, const char *to)
     goto cleanup;
   }
   fs = hdfsConnGetFs(conn);
-  if (hdfsRename(fs, from, to)) {
+  if (hdfsRenameExt(fs, from, to, HDFS_RENAME_FLAG_OVERWRITE)) {
     ERROR("Rename %s to %s failed", from, to);
     ret = (errno > 0) ? -errno : -EIO;
     goto cleanup;

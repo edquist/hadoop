@@ -140,7 +140,7 @@ static int setupPaths(const struct tlhThreadInfo *ti, struct tlhPaths *paths)
 static int doTestHdfsOperations(struct tlhThreadInfo *ti, hdfsFS fs,
                                 const struct tlhPaths *paths)
 {
-    char tmp[4096];
+    char tmp[4096], tmp2[256];
     hdfsFile file;
     int ret, expected;
     hdfsFileInfo *fileInfo;
@@ -237,6 +237,20 @@ static int doTestHdfsOperations(struct tlhThreadInfo *ti, hdfsFS fs,
     EXPECT_ZERO(strcmp("ha2", fileInfo->mOwner));
     EXPECT_ZERO(strcmp("doop2", fileInfo->mGroup));
     hdfsFreeFileInfo(fileInfo, 1);
+
+    snprintf(tmp, sizeof(tmp), "%s/file", paths->prefix);
+    snprintf(tmp2, sizeof(tmp2), "%s/file2", paths->prefix);
+    file = hdfsOpenFile(fs, tmp2, O_CREAT | O_WRONLY, 0, 0, 0);
+    EXPECT_ZERO(hdfsCloseFile(fs, file));
+    if (hdfsRenameExt(fs, tmp, tmp2, HDFS_RENAME_FLAG_NONE) != -1) {
+      fprintf(stderr, "TEST_ERROR: when HDFS_RENAME_FLAG_OVERWRITE is NOT "
+                      "supplied, we should not be able to rename over an "
+                      "extant file.  But we were able to rename '%s' over "
+                      "'%s'\n", tmp, tmp2);
+      return EIO;
+    }
+    EXPECT_ZERO(hdfsRenameExt(fs, tmp, tmp2, HDFS_RENAME_FLAG_OVERWRITE));
+    EXPECT_ZERO(hdfsDelete(fs, tmp2, 1));
 
     snprintf(tmp, sizeof(tmp), "%s/nonexistent-file-name", paths->prefix);
     EXPECT_NEGATIVE_ONE_WITH_ERRNO(hdfsChown(fs, tmp, "ha3", NULL), ENOENT);
