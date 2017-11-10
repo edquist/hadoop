@@ -101,7 +101,7 @@ int move_to_trash(const char *item, hdfsFS userFS) {
       return -EIO;
     }
   }
-  if (hdfsRename(userFS, item, target)) {
+  if (hdfsRenameExt(userFS, item, target, HDFS_RENAME_FLAG_NONE)) {
     ERROR("Trying to rename %s to %s", item, target);
     return -EIO;
   }

@@ -112,7 +112,7 @@ static int doTestGetDefaultBlockSize(hdfsFS fs, const char *path)
 
 static int doTestHdfsOperations(struct tlhThreadInfo *ti, hdfsFS fs)
 {
-    char prefix[256], tmp[256];
+    char prefix[256], tmp[256], tmp2[256];
     hdfsFile file;
     int ret, expected;
     hdfsFileInfo *fileInfo;
@@ -208,7 +208,19 @@ static int doTestHdfsOperations(struct tlhThreadInfo *ti, hdfsFS fs)
     EXPECT_ZERO(strcmp("doop2", fileInfo->mGroup));
     hdfsFreeFileInfo(fileInfo, 1);
 
-    EXPECT_ZERO(hdfsDelete(fs, prefix, 1));
+    snprintf(tmp, sizeof(tmp), "%s/file", prefix);
+    snprintf(tmp2, sizeof(tmp2), "%s/file2", prefix);
+    file = hdfsOpenFile(fs, tmp2, O_CREAT | O_WRONLY, 0, 0, 0);
+    EXPECT_ZERO(hdfsCloseFile(fs, file));
+    if (hdfsRenameExt(fs, tmp, tmp2, HDFS_RENAME_FLAG_NONE) != -1) {
+      fprintf(stderr, "TEST_ERROR: when HDFS_RENAME_FLAG_OVERWRITE is NOT "
+                      "supplied, we should not be able to rename over an "
+                      "extant file.  But we were able to rename '%s' over "
+                      "'%s'\n", tmp, tmp2);
+      return EIO;
+    }
+    EXPECT_ZERO(hdfsRenameExt(fs, tmp, tmp2, HDFS_RENAME_FLAG_OVERWRITE));
+    EXPECT_ZERO(hdfsDelete(fs, tmp2, 1));
     return 0;
 }
 

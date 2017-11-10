@@ -36,6 +36,8 @@
 #define EINTERNAL 255 
 #endif
 
+#define HDFS_RENAME_FLAG_NONE 0x0
+#define HDFS_RENAME_FLAG_OVERWRITE 0x1
 
 /** All APIs set errno to meaningful values */
 
@@ -485,7 +487,9 @@ extern  "C" {
     int hdfsDelete(hdfsFS fs, const char* path, int recursive);
 
     /**
-     * hdfsRename - Rename file. 
+     * hdfsRename - Rename a file or directory.
+     * Equivalent to hdfsRenameExt with no flags passed.
+     *
      * @param fs The configured filesystem handle.
      * @param oldPath The path of the source file. 
      * @param newPath The path of the destination file. 
@@ -493,6 +497,20 @@ extern  "C" {
      */
     int hdfsRename(hdfsFS fs, const char* oldPath, const char* newPath);
 
+    /**
+     * hdfsRenameExt - Rename a file or directory.
+     *
+     * @param fs The configured filesystem handle.
+     * @param oldPath The path of the source file. 
+     * @param newPath The path of the destination file. 
+     * @param flags  A bitwise combination of the following flags:
+     *     HDFS_RENAME_FLAG_OVERWRITE: if true, we will overwrite the
+     *         destination file rather than failing if it exists.
+     *         Directories cannot be overwritten.
+     * @return Returns 0 on success, -1 on error. 
+     */
+    int hdfsRenameExt(hdfsFS fs, const char* oldPath, const char* newPath,
+                      int flags);
 
     /** 
      * hdfsGetWorkingDirectory - Get the current working directory for

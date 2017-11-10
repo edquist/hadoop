@@ -97,6 +97,9 @@ jthrowable methodIdFromClass(const char *className, const char *methName,
 
 jthrowable globalClassReference(const char *className, JNIEnv *env, jclass *out);
 
+jthrowable getJavaEnum(JNIEnv *env, const char *className, const char *value,
+                       jobject *jobj);
+
 /** classNameOfObject: Get an object's class name.
  * @param jobj: The object.
  * @param env: The JNIEnv pointer.

@@ -371,6 +371,47 @@ jthrowable globalClassReference(const char *className, JNIEnv *env, jclass *out)
     return NULL;
 }
 
+jthrowable getJavaEnum(JNIEnv *env, const char *className, const char *value,
+                       jobject *jobj) {
+    jthrowable jthr;
+    jclass enumClazz;
+    jobject jEnum;
+    jfieldID fieldId;
+    char *decoratedClassName = NULL;
+    size_t decoratedClassNameLen;
+      
+    jthr = globalClassReference(className, env, &enumClazz);
+    if (jthr) {
+        goto done;
+    }
+    decoratedClassNameLen = strlen(className) + 5;
+    decoratedClassName = malloc(decoratedClassNameLen);
+    if (!decoratedClassName) {
+        jthr = newRuntimeError(env, "classNameOfObject: out of memory");
+        goto done;
+    }
+    snprintf(decoratedClassName, decoratedClassNameLen, "L%s;", className);
+    fprintf(stderr, "point 100\n");
+    fieldId = (*env)->GetStaticFieldID(env, enumClazz, value,
+                                       decoratedClassName);
+    if (!fieldId) {
+        jthr = getPendingExceptionAndClear(env);
+        goto done;
+    }
+    fprintf(stderr, "point 200\n");
+    jEnum = (*env)->GetStaticObjectField(env, enumClazz, fieldId);
+    if (!jEnum) {
+        jthr = getPendingExceptionAndClear(env);
+        goto done;
+    }
+    fprintf(stderr, "point 300\n");
+    *jobj = jEnum;
+    jthr = NULL;
+done:
+    free(decoratedClassName);
+    return jthr;
+}
+
 jthrowable classNameOfObject(jobject jobj, JNIEnv *env, char **name)
 {
     jthrowable jthr;
