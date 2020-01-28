@@ -1,0 +1,33 @@
+From 3678dd5e922f405a2fc0ee9694d3a3e739fb921f Mon Sep 17 00:00:00 2001
+From: John Zhuge <jzhuge@cloudera.com>
+Date: Fri, 26 May 2017 16:14:09 -0800
+Subject: [PATCH 2476/2540] Revert "HADOOP-14100. Upgrade Jsch jar to latest
+ version to fix vulnerability in old versions.
+ Contributed by Vinayakumar B and Brahma Reddy
+ Battula."
+
+This reverts commit 8eab26ae56b087fca043f59f7b3aa3cfca12cc05.
+
+https://jira.cloudera.com/browse/CDH-54459 Post-commit failure due to HADOOP-14100 Upgrade Jsch jar
+
+Change-Id: I5b381f037e690528f9458ac0b6d1eb67994a4da5
+---
+ hadoop-project/pom.xml |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hadoop-project/pom.xml b/hadoop-project/pom.xml
+index 4cf0120..d7cb433 100644
+--- a/hadoop-project/pom.xml
++++ b/hadoop-project/pom.xml
+@@ -819,7 +819,7 @@
+       <dependency>
+         <groupId>com.jcraft</groupId>
+         <artifactId>jsch</artifactId>
+-        <version>0.1.54</version>
++        <version>0.1.42</version>
+       </dependency>
+       <dependency>
+         <groupId>org.apache.htrace</groupId>
+-- 
+1.7.9.5
+
